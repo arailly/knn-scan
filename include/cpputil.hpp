@@ -1,20 +1,20 @@
 #ifndef CPPUTIL_CPPUTIL_HPP
 #define CPPUTIL_CPPUTIL_HPP
 
-#include <algorithm>
-#include <chrono>
-#include <cmath>
-#include <exception>
-#include <fstream>
 #include <iostream>
-#include <iterator>
-#include <json.hpp>
-#include <numeric>
-#include <omp.h>
-#include <sstream>
-#include <stdexcept>
 #include <vector>
+#include <algorithm>
+#include <iterator>
+#include <numeric>
+#include <cmath>
+#include <fstream>
+#include <sstream>
+#include <chrono>
+#include <exception>
+#include <stdexcept>
+#include <omp.h>
 #include <x86intrin.h>
+#include <json.hpp>
 
 using namespace std;
 using namespace nlohmann;
@@ -34,7 +34,7 @@ namespace cpputil {
         return result;
     }
 
-    template<typename T = float>
+    template <typename T = float>
     struct Data {
         size_t id;
         std::vector<T> x;
@@ -46,23 +46,21 @@ namespace cpputil {
             std::copy(v.begin(), v.end(), std::back_inserter(x));
         }
 
-        explicit Data(std::vector<T> v) {
+        Data(std::vector<T> v) {
             id = 0;
             std::copy(v.begin(), v.end(), std::back_inserter(x));
         }
 
-        auto &operator[](size_t i) { return x[i]; }
-        const auto &operator[](size_t i) const { return x[i]; }
+        auto& operator [] (size_t i) { return x[i]; }
+        const auto& operator [] (size_t i) const { return x[i]; }
 
         bool operator==(const Data &o) const {
-            if (id == o.id)
-                return true;
+            if (id == o.id) return true;
             return false;
         }
 
         bool operator!=(const Data &o) const {
-            if (id != o.id)
-                return true;
+            if (id != o.id) return true;
             return false;
         }
 
@@ -79,23 +77,23 @@ namespace cpputil {
         }
     };
 
-    template<typename T = float>
+    template <typename T = float>
     using Dataset = vector<Data<T>>;
 
-    template<typename T = float>
+    template <typename T = float>
     using Series = vector<Data<T>>;
 
-    template<typename T = float>
+    template <typename T = float>
     using RefSeries = vector<reference_wrapper<const Data<T>>>;
 
-    template<typename T = float>
+    template <typename T = float>
     using SeriesList = vector<vector<Data<T>>>;
 
-    template<typename T = float>
+    template <typename T = float>
     using DistanceFunction = function<T(Data<T>, Data<T>)>;
 
-    template<typename T = float>
-    auto euclidean_distance(const Data<T> &p1, const Data<T> &p2) {
+    template <typename T = float>
+    auto euclidean_distance(const Data<T>& p1, const Data<T>& p2) {
         float result = 0;
         for (size_t i = 0; i < p1.size(); i++) {
             result += std::pow(p1[i] - p2[i], 2);
@@ -104,8 +102,8 @@ namespace cpputil {
         return result;
     }
 
-    template<typename T = float>
-    auto manhattan_distance(const Data<T> &p1, const Data<T> &p2) {
+    template <typename T = float>
+    auto manhattan_distance(const Data<T>& p1, const Data<T>& p2) {
         float result = 0;
         for (size_t i = 0; i < p1.size(); i++) {
             result += std::abs(p1[i] - p2[i]);
@@ -113,8 +111,8 @@ namespace cpputil {
         return result;
     }
 
-    template<typename T = float>
-    auto l2_norm(const Data<T> &p) {
+    template <typename T = float>
+    auto l2_norm(const Data<T>& p) {
         float result = 0;
         for (size_t i = 0; i < p.size(); i++) {
             result += std::pow(p[i], 2);
@@ -123,21 +121,22 @@ namespace cpputil {
         return result;
     }
 
-    template<typename T = float>
+    template <typename T = float>
     auto clip(const T val, const T min_val, const T max_val) {
         return max(min(val, max_val), min_val);
     }
 
-    template<typename T = float>
-    auto cosine_similarity(const Data<T> &p1, const Data<T> &p2) {
-        float val = inner_product(p1.begin(), p1.end(), p2.begin(), 0.0) / (l2_norm(p1) * l2_norm(p2));
+    template <typename T = float>
+    auto cosine_similarity(const Data<T>& p1, const Data<T>& p2) {
+        float val = inner_product(p1.begin(), p1.end(), p2.begin(), 0.0)
+            / (l2_norm(p1) * l2_norm(p2));
         return clip(val, static_cast<float>(-1), static_cast<float>(1));
     }
 
     constexpr float pi = static_cast<const float>(3.14159265358979323846264338);
 
-    template<typename T = float>
-    auto angular_distance(const Data<T> &p1, const Data<T> &p2) {
+    template <typename T = float>
+    auto angular_distance(const Data<T>& p1, const Data<T>& p2) {
         return acos(cosine_similarity(p1, p2)) / pi;
     }
 
@@ -145,7 +144,7 @@ namespace cpputil {
     // function for AVX
     static inline __m128 masked_read(int d, const float *x) {
 
-        assert(0 <= d && d < 4);
+        assert (0 <= d && d < 4);
         __attribute__((__aligned__(16))) float buf[4] = {0, 0, 0, 0};
         switch (d) {
             case 3:
@@ -155,7 +154,7 @@ namespace cpputil {
             case 1:
                 buf[0] = x[0];
         }
-        return _mm_load_ps(buf);
+        return _mm_load_ps (buf);
     }
 
     float l2_sqr_avx(const float *x, const float *y, size_t d) {
@@ -163,64 +162,45 @@ namespace cpputil {
         __m256 msum1 = _mm256_setzero_ps();
 
         while (d >= 8) {
-            __m256 mx = _mm256_loadu_ps(x);
-            x += 8;
-            __m256 my = _mm256_loadu_ps(y);
-            y += 8;
+            __m256 mx = _mm256_loadu_ps (x); x += 8;
+            __m256 my = _mm256_loadu_ps (y); y += 8;
             const __m256 a_m_b1 = mx - my;
             msum1 += a_m_b1 * a_m_b1;
             d -= 8;
         }
 
         __m128 msum2 = _mm256_extractf128_ps(msum1, 1);
-        msum2 += _mm256_extractf128_ps(msum1, 0);
+        msum2 +=       _mm256_extractf128_ps(msum1, 0);
 
         if (d >= 4) {
-            __m128 mx = _mm_loadu_ps(x);
-            x += 4;
-            __m128 my = _mm_loadu_ps(y);
-            y += 4;
+            __m128 mx = _mm_loadu_ps (x); x += 4;
+            __m128 my = _mm_loadu_ps (y); y += 4;
             const __m128 a_m_b1 = mx - my;
             msum2 += a_m_b1 * a_m_b1;
             d -= 4;
         }
 
         if (d > 0) {
-            __m128 mx = masked_read(d, x);
-            __m128 my = masked_read(d, y);
+            __m128 mx = masked_read (d, x);
+            __m128 my = masked_read (d, y);
             __m128 a_m_b1 = mx - my;
             msum2 += a_m_b1 * a_m_b1;
         }
 
-        msum2 = _mm_hadd_ps(msum2, msum2);
-        msum2 = _mm_hadd_ps(msum2, msum2);
-        return _mm_cvtss_f32(msum2);
+        msum2 = _mm_hadd_ps (msum2, msum2);
+        msum2 = _mm_hadd_ps (msum2, msum2);
+        return  _mm_cvtss_f32 (msum2);
     }
 
-    auto euclidean_distance_avx(const Data<float> &data1,
-                                const Data<float> &data2) {
+    auto euclidean_distance_avx(const Data<float>& data1,
+                                const Data<float>& data2) {
         const auto dim = data1.size();
         const auto dist = l2_sqr_avx(&data1.x[0], &data2.x[0], dim);
         return dist;
     }
 #endif
 
-    auto select_distance(const string &distance = "euclidean") {
-        if (distance == "euclidean") {
-#ifdef __AVX__
-            return euclidean_distance_avx;
-#endif
-            return euclidean_distance<float>;
-        }
-        if (distance == "manhattan")
-            return manhattan_distance<float>;
-        if (distance == "angular")
-            return angular_distance<float>;
-        else
-            throw runtime_error("invalid distance");
-    }
-
-    template<typename T = float>
+    template <typename T = float>
     vector<T> split(string &input, char delimiter = ',') {
         std::istringstream stream(input);
         std::string field;
@@ -233,19 +213,17 @@ namespace cpputil {
         return result;
     }
 
-    template<typename T = float>
-    Dataset<T> read_csv(const std::string &path, const int &nrows = -1,
+    template <typename T = float>
+    Dataset<T> read_csv(const std::string &path, const int& nrows = -1,
                         const bool &skip_header = false) {
         std::ifstream ifs(path);
-        if (!ifs)
-            throw runtime_error("Can't open file!");
+        if (!ifs) throw runtime_error("Can't open file!");
         std::string line;
 
         Dataset<T> series;
         for (size_t i = 0; (i < nrows) && std::getline(ifs, line); ++i) {
             // if first line is the header then skip
-            if (skip_header && (i == 0))
-                continue;
+            if (skip_header && (i == 0)) continue;
             std::vector<T> v = split<T>(line);
             series.push_back(Data<T>(i, v));
         }
@@ -254,14 +232,13 @@ namespace cpputil {
 
     const int n_max_threads = omp_get_max_threads();
 
-    template<typename T = float>
-    Dataset<T> load_data(const string &path, int n = 0) {
+    template <typename T = float>
+    Dataset<T> load_data(const string& path, int n = 0) {
         // file path
         if (path.rfind(".csv", path.size()) < path.size()) {
             auto series = Dataset<T>();
             ifstream ifs(path);
-            if (!ifs)
-                throw runtime_error("Can't open file!");
+            if (!ifs) throw runtime_error("Can't open file!");
             string line;
             for (size_t i = 0; (i < n) && std::getline(ifs, line); ++i) {
                 auto v = split(line);
@@ -276,10 +253,9 @@ namespace cpputil {
         for (int i = 0; i < n; i++) {
             const string data_path = path + '/' + to_string(i) + ".csv";
             ifstream ifs(data_path);
-            if (!ifs)
-                throw runtime_error("Can't open file!");
+            if (!ifs) throw runtime_error("Can't open file!");
             string line;
-            while (getline(ifs, line)) {
+            while(getline(ifs, line)) {
                 auto v = split(line);
                 const auto id = static_cast<size_t>(v[0]);
                 v.erase(v.begin());
@@ -303,11 +279,10 @@ namespace cpputil {
         }
     }
 
-    json read_config(const string &config_path = "./config.json") {
+    json read_config(const string& config_path = "./config.json") {
         json config;
         ifstream ifs(config_path);
-        if (ifs.fail())
-            throw runtime_error("Can't open file!");
+        if (ifs.fail()) throw runtime_error("Can't open file!");
         ifs >> config;
         return config;
     }
@@ -319,11 +294,11 @@ namespace cpputil {
         return chrono::duration_cast<chrono::microseconds>(end - start).count();
     }
 
-    auto ends_with(const string &pattern, const string &str) {
+    auto ends_with(const string& pattern, const string& str) {
         return str.rfind(pattern, str.size()) < str.size();
     }
 
-    bool is_csv(const string &path) {
+    bool is_csv(const string& path) {
         return ends_with(".csv", path);
     }
 
@@ -343,51 +318,48 @@ namespace cpputil {
 
     using Neighbors = vector<Neighbor>;
 
-    void sort_neighbors(Neighbors &neighbors) {
+    void sort_neighbors(Neighbors& neighbors) {
         sort(neighbors.begin(), neighbors.end(),
-             [](const auto &n1, const auto &n2) { return n1.dist < n2.dist; });
+             [](const auto& n1, const auto& n2) { return n1.dist < n2.dist; });
     }
 
     struct CompLess {
-        constexpr bool operator()(const Neighbor &n1, const Neighbor &n2) const noexcept {
+        constexpr bool operator()(const Neighbor& n1, const Neighbor& n2) const noexcept {
             return n1.dist < n2.dist;
         }
     };
 
     struct CompGreater {
-        constexpr bool operator()(const Neighbor &n1, const Neighbor &n2) const noexcept {
+        constexpr bool operator()(const Neighbor& n1, const Neighbor& n2) const noexcept {
             return n1.dist > n2.dist;
         }
     };
 
-    template<typename T>
-    auto scan_knn_search(const Data<T> &query, int k, const Dataset<T> &dataset,
-                         string distance = "euclidean") {
-        const auto df = select_distance(distance);
+    template <typename T>
+    auto scan_knn_search(const Data<T>& query, int k, const Dataset<T>& dataset) {
         auto threshold = float_max;
 
         multimap<float, int> result_map;
-        for (const auto &data : dataset) {
-            const auto dist = df(query, data);
+        for (const auto& data : dataset) {
+            const auto dist = euclidean_distance(query, data);
 
             if (result_map.size() < k || dist < threshold) {
                 result_map.emplace(dist, data.id);
                 threshold = (--result_map.cend())->first;
-                if (result_map.size() > k)
-                    result_map.erase(--result_map.cend());
+                if (result_map.size() > k) result_map.erase(--result_map.cend());
             }
         }
 
         vector<Neighbor> result;
-        for (const auto &result_pair : result_map) {
+        for (const auto& result_pair : result_map) {
             result.emplace_back(result_pair.first, result_pair.second);
         }
 
         return result;
     }
 
-    template<typename T = float>
-    auto calc_centroid(const Dataset<T> &dataset) {
+    template <typename T = float>
+    auto calc_centroid(const Dataset<T>& dataset) {
         const auto n = dataset.size();
         const auto dim = dataset[0].size();
 
@@ -395,7 +367,7 @@ namespace cpputil {
         Data<T> centroid(vector<T>(dim, 0));
 
         // calc centroid
-        for (const auto &data : dataset) {
+        for (const auto& data : dataset) {
             for (int i = 0; i < dim; ++i) {
                 centroid[i] += data[i] / n;
             }
@@ -404,21 +376,20 @@ namespace cpputil {
         return centroid;
     }
 
-    template<typename T = float>
-    auto calc_medoid(const Dataset<T> &dataset) {
+    template <typename T = float>
+    auto calc_medoid(const Dataset<T>& dataset) {
         const auto centroid = calc_centroid(dataset);
         const auto search_result = scan_knn_search(centroid, 1, dataset);
         return search_result[0].id;
     }
 
-    auto calc_recall(const Neighbors &actual, const Neighbors &expect) {
+    auto calc_recall(const Neighbors& actual, const Neighbors& expect) {
         float recall = 0;
 
-        for (const auto &n1 : actual) {
+        for (const auto& n1 : actual) {
             int match = 0;
-            for (const auto &n2 : expect) {
-                if (n1.id != n2.id)
-                    continue;
+            for (const auto& n2 : expect) {
+                if (n1.id != n2.id) continue;
                 match = 1;
                 break;
             }
@@ -429,7 +400,7 @@ namespace cpputil {
         return recall;
     }
 
-    auto calc_recall(const Neighbors &actual, const Neighbors &expect, int k) {
+    auto calc_recall(const Neighbors& actual, const Neighbors& expect, int k) {
         float recall = 0;
 
         for (int i = 0; i < k; ++i) {
@@ -437,8 +408,7 @@ namespace cpputil {
             int match = 0;
             for (int j = 0; j < k; ++j) {
                 const auto n2 = expect[j];
-                if (n1.id != n2.id)
-                    continue;
+                if (n1.id != n2.id) continue;
                 match = 1;
                 break;
             }
@@ -449,7 +419,7 @@ namespace cpputil {
         return recall;
     }
 
-    auto load_neighbors(const string &neighbor_path, int n,
+    auto load_neighbors(const string& neighbor_path, int n,
                         bool skip_header = false) {
         ifstream ifs(neighbor_path);
         if (!ifs)
@@ -458,10 +428,9 @@ namespace cpputil {
         vector<Neighbors> neighbors_list(n);
         string line;
 
-        if (skip_header)
-            getline(ifs, line);
+        if (skip_header) getline(ifs, line);
 
-        while (getline(ifs, line)) {
+        while(getline(ifs, line)) {
             const auto row = split(line);
 
             const int head_id = row[0];
@@ -480,31 +449,31 @@ namespace cpputil {
 
         using Data = vector<float>::const_iterator;
 
-        DataArray(int n, int dim) : n(n), dim(dim), x(n * dim) {}
+        DataArray(int n, int dim): n(n), dim(dim), x(n * dim) {}
 
-        auto load(const vector<float> &v) { x = v; }
+        auto load(const vector<float>& v) { x = v; }
 
-        auto load_fvecs(const string &path) {
-            float *row = new float[dim];
+        auto load_fvecs(const string& path) {
+            float* row = new float[dim];
             ifstream ifs(path, ios::binary);
             if (!ifs)
                 throw runtime_error("can't open file: " + path);
 
             for (int i = 0; i < n; i++) {
                 int head = 0;
-                ifs.read((char *) &head, 4);
+                ifs.read((char*)&head, 4);
 
                 if (head != dim)
                     throw runtime_error("dimension not matched");
 
-                ifs.read((char *) row, head * sizeof(float));
+                ifs.read((char*)row, head * sizeof(float));
                 for (int j = 0; j < dim; j++) {
                     x[i * dim + j] = row[j];
                 }
             }
         }
 
-        auto load(const string &path) {
+        auto load(const string& path) {
             if (ends_with(".fvecs", path))
                 load_fvecs(path);
             else
@@ -520,13 +489,44 @@ namespace cpputil {
 
     using Dist = function<float(DataArray::Data, DataArray::Data, int)>;
 
-    auto euclidean_dist(DataArray::Data data_1, DataArray::Data data_2,
-                        int dim) {
+    auto l2_dist(DataArray::Data data_1, DataArray::Data data_2, int dim) {
+#ifdef __AVX__
+        return sqrt(l2_sqr_avx(&(*data_1), &(*data_2), dim));
+#endif
+
         float result = 0;
         for (size_t i = 0; i < dim; i++, ++data_1, ++data_2) {
             result += pow(*data_1 - *data_2, 2);
         }
         result = sqrt(result);
+        return result;
+    }
+
+    auto knn_scan(int k, DataArray::Data query, DataArray dataset,
+                  Dist dist = l2_dist) {
+        map<float, int> candidates;
+
+        for (int data_id = 0; data_id < dataset.n; ++data_id) {
+            const auto data = dataset.find(data_id);
+            const auto dist_val = dist(query, data, dataset.dim);
+
+            if (candidates.size() < k) {
+                candidates.emplace(dist_val, data_id);
+                continue;
+            }
+
+            const auto furthest = --candidates.cend();
+            if (dist_val < furthest->first) {
+                candidates.emplace(dist_val, data_id);
+                candidates.erase(furthest);
+            }
+        }
+
+        Neighbors result;
+        for (const auto candidate : candidates) {
+            result.emplace_back(candidate.first, candidate.second);
+        }
+
         return result;
     }
 
@@ -536,17 +536,17 @@ namespace cpputil {
 
         GroundTruth(int n, int k) : n(n), k(k), x(n) {}
 
-        auto load_ivecs(const string &path) {
+        auto load_ivecs(const string& path) {
             ifstream ifs(path, ios::binary);
             unsigned int *row = new unsigned int[k];
             for (int i = 0; i < n; i++) {
                 int head;
-                ifs.read((char *) &head, 4);
+                ifs.read((char*)&head, 4);
 
                 if (head != k)
                     throw runtime_error("k not matched");
 
-                ifs.read((char *) row, head * 4);
+                ifs.read((char*)row, head * 4);
                 for (int j = 0; j < k; ++j) {
                     x[i].emplace_back(row[j]);
                 }
@@ -555,7 +555,7 @@ namespace cpputil {
 
         decltype(auto) operator[](int i) { return x[i]; }
 
-        auto load(const string &path) {
+        auto load(const string& path) {
             if (ends_with(".ivecs", path))
                 load_ivecs(path);
             else
@@ -563,7 +563,7 @@ namespace cpputil {
         }
     };
 
-    auto calc_recall(const Neighbors &actual, const vector<int> &expect,
+    auto calc_recall(const Neighbors& actual, const vector<int>& expect,
                      int k) {
         float recall = 0;
 
@@ -572,8 +572,7 @@ namespace cpputil {
             int match = 0;
             for (int j = 0; j < k; ++j) {
                 const auto n2 = expect[j];
-                if (n1.id != n2)
-                    continue;
+                if (n1.id != n2) continue;
                 match = 1;
                 break;
             }
@@ -583,6 +582,6 @@ namespace cpputil {
         recall /= actual.size();
         return recall;
     }
-}// namespace cpputil
+}
 
-#endif//CPPUTIL_CPPUTIL_HPP
+#endif //CPPUTIL_CPPUTIL_HPP
