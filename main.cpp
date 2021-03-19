@@ -31,7 +31,7 @@ int main(int argc, char **argv) {
                            "dataset_path "
                            "query_path "
                            "save_path" << endl;
-
+        exit(1);
     }
 
     int k = atoi(argv[1]);
